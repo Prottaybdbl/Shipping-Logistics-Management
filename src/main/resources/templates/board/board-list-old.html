@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boards - Task Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 mb-0">My Boards</h1>
+      <div class="d-flex gap-2">
+        <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+           class="btn btn-outline-secondary" href="/dashboard">📊 Dashboard</a>
+        <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+           class="btn btn-primary" href="/boards/new">+ New Board</a>
+      </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${param.error}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${success}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-4" th:each="board : ${boards}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title" th:text="${board.title}">Board Title</h5>
+            <p class="card-text text-muted small" th:text="${board.description}" th:if="${board.description}">Description</p>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <small class="text-muted" th:text="'Created ' + ${#temporals.format(board.createdAt, 'MMM dd, yyyy')}"></small>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+              <a th:href="@{/boards/{id}(id=${board.id})}" class="btn btn-sm btn-primary">Open</a>
+              <a th:if="${board.createdBy.id == currentUser.id}" 
+                 th:href="@{/boards/{id}/settings(id=${board.id})}" 
+                 class="btn btn-sm btn-outline-secondary">Settings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div th:if="${#lists.isEmpty(boards)}" class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body text-center py-5">
+            <p class="text-muted mb-3">No boards available.</p>
+            <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+               class="btn btn-primary" href="/boards/new">Create Your First Board</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

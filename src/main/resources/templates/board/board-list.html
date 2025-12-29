@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Boards - Shipping Logistics Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link th:href="@{/css/premium-style.css}" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+    
+    .page-header {
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 24px 0;
+      margin-bottom: 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .page-title {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    
+    .board-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+    }
+    
+    .board-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .board-card:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      transform: translateY(-4px);
+    }
+    
+    .board-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3436;
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
+    }
+    
+    .board-description {
+      color: #636e72;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      min-height: 40px;
+    }
+    
+    .board-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    .board-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #636e72;
+    }
+    
+    .board-meta-item i {
+      color: #667eea;
+    }
+    
+    .board-actions {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .btn-primary-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary-gradient:hover {
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+      color: white;
+    }
+    
+    .btn-secondary-outline {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+    
+    .btn-secondary-outline:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 80px 32px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    
+    .empty-icon {
+      font-size: 64px;
+      color: #b2bec3;
+      margin-bottom: 24px;
+    }
+    
+    .empty-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3436;
+      margin-bottom: 12px;
+    }
+    
+    .empty-description {
+      color: #636e72;
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .user-avatar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .user-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-menu-premium {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 12px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      min-width: 220px;
+      padding: 8px;
+      display: none;
+      z-index: 1000;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .dropdown-menu-premium.show {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .dropdown-header-premium {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e9ecef;
+      margin-bottom: 8px;
+    }
+    
+    .dropdown-user-name {
+      font-weight: 700;
+      color: #2d3436;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    
+    .dropdown-user-email {
+      font-size: 13px;
+      color: #636e72;
+    }
+    
+    .dropdown-item-premium {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      color: #2d3436;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .dropdown-item-premium:hover {
+      background: rgba(102, 126, 234, 0.08);
+      color: #667eea;
+    }
+    
+    .dropdown-item-premium i {
+      width: 18px;
+      text-align: center;
+    }
+    
+    .dropdown-divider-premium {
+      height: 1px;
+      background: #e9ecef;
+      margin: 8px 0;
+    }
+    
+    .dropdown-item-danger {
+      color: #ff6b6b;
+    }
+    
+    .dropdown-item-danger:hover {
+      background: rgba(255, 107, 107, 0.08);
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Premium Header -->
+  <div class="page-header">
+    <div class="premium-container">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="page-title">
+            <i class="fas fa-ship me-2"></i>Shipping Boards
+          </h1>
+        </div>
+        <div class="header-actions">
+          <!-- Shipping Dashboard Button -->
+          <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO' || currentUser.role.name() == 'OFFICER'}" 
+             th:href="@{/shipping/dashboard}" class="btn-icon" 
+             style="background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: white; box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);">
+            <i class="fas fa-ship"></i>
+            <span>Shipping Dashboard</span>
+          </a>
+          
+          <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+             href="/dashboard" class="btn-icon btn-secondary-outline">
+            <i class="fas fa-chart-line"></i>
+            <span>Analytics</span>
+          </a>
+          <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+             href="/boards/new" class="btn-icon btn-primary-gradient">
+            <i class="fas fa-plus"></i>
+            <span>New Board</span>
+          </a>
+          
+          <!-- User Dropdown -->
+          <div class="user-dropdown">
+            <div class="user-avatar" id="userMenuButton" th:text="${#strings.substring(currentUser.fullName, 0, 1)}">U</div>
+            <div class="dropdown-menu-premium" id="userDropdown">
+              <div class="dropdown-header-premium">
+                <div class="dropdown-user-name" th:text="${currentUser.fullName}">User Name</div>
+                <div class="dropdown-user-email" th:text="${currentUser.email}">user@example.com</div>
+              </div>
+              <a href="/profile" class="dropdown-item-premium">
+                <i class="fas fa-user"></i>
+                <span>My Profile</span>
+              </a>
+              <a th:if="${currentUser.role.name() == 'ADMIN'}" href="/admin/dashboard" class="dropdown-item-premium">
+                <i class="fas fa-crown"></i>
+                <span>Admin Dashboard</span>
+              </a>
+              <div class="dropdown-divider-premium"></div>
+              <form th:action="@{/logout}" method="post" style="margin: 0;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="dropdown-item-premium dropdown-item-danger" style="width: 100%; border: none; background: none; text-align: left; cursor: pointer;">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Logout</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="premium-container">
+    <!-- Flash Messages -->
+    <div th:if="${param.error}" class="alert-premium alert-premium-danger">
+      <i class="fas fa-exclamation-circle"></i>
+      <span th:text="${param.error[0]}">Error</span>
+    </div>
+    <div th:if="${success}" class="alert-premium alert-premium-success">
+      <i class="fas fa-check-circle"></i>
+      <span th:text="${success}">Success</span>
+    </div>
+
+    <!-- Boards Grid -->
+    <div class="row g-4" th:if="${!#lists.isEmpty(boards)}">
+      <div class="col-md-6 col-lg-4" th:each="board : ${boards}">
+        <div class="board-card">
+          <h3 class="board-title" th:text="${board.title}">Board Title</h3>
+          <p class="board-description" th:text="${board.description ?: 'No description'}">Description</p>
+          
+          <div class="board-meta">
+            <div class="board-meta-item">
+              <i class="fas fa-calendar"></i>
+              <span th:text="${#temporals.format(board.createdAt, 'MMM dd, yyyy')}">Jan 01, 2025</span>
+            </div>
+            <div class="board-meta-item" th:if="${board.members != null && !board.members.isEmpty()}">
+              <i class="fas fa-users"></i>
+              <span th:text="${board.members.size()} + ' members'">3 members</span>
+            </div>
+          </div>
+          
+          <div class="board-actions">
+            <a th:href="@{/boards/{id}(id=${board.id})}" class="btn-icon btn-primary-gradient">
+              <i class="fas fa-folder-open"></i>
+              <span>Open Board</span>
+            </a>
+            <a th:if="${board.createdBy.id == currentUser.id}" 
+               th:href="@{/boards/{id}/settings(id=${board.id})}" 
+               class="btn-icon btn-secondary-outline">
+              <i class="fas fa-cog"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(boards)}" class="empty-state">
+      <div class="empty-icon">
+        <i class="fas fa-inbox"></i>
+      </div>
+      <h2 class="empty-title">No Boards Yet</h2>
+      <p class="empty-description">
+        Create your first board to start tracking shipments and managing logistics
+      </p>
+      <a th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}" 
+         href="/boards/new" class="btn-icon btn-primary-gradient">
+        <i class="fas fa-plus"></i>
+        <span>Create Your First Board</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Toggle user dropdown
+    const userMenuButton = document.getElementById('userMenuButton');
+    const userDropdown = document.getElementById('userDropdown');
+    
+    if (userMenuButton && userDropdown) {
+      userMenuButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.classList.remove('show');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

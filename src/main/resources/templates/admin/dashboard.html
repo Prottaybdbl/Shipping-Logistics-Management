@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Task Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 mb-0">Admin Dashboard</h1>
+      <a class="btn btn-outline-secondary" href="/boards">Back to Boards</a>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted">Total Users</div>
+            <div class="display-6" th:text="${totalUsers}">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted">Total Institutes</div>
+            <div class="display-6" th:text="${totalInstitutes}">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted">Active Institutes</div>
+            <div class="display-6" th:text="${activeInstitutes}">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="text-muted">Quick Actions</div>
+            <div class="d-flex gap-2 mt-2">
+              <a href="/admin/institutes" class="btn btn-sm btn-primary">Institutes</a>
+              <a href="/admin/users" class="btn btn-sm btn-primary">Users</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+      <div class="card-body">
+        <p class="text-muted mb-0">This is a placeholder for the Admin Dashboard. Replace with real analytics and management UI.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

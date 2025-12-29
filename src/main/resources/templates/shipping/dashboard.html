@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fb Shipping Flow Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .stat-card {
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .stat-card.pending { border-color: #ffc107; }
+        .stat-card.in-progress { border-color: #0dcaf0; }
+        .stat-card.completed { border-color: #198754; }
+        .stat-card.cost { border-color: #0d6efd; }
+        
+        .flow-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .lighter-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin: 3px;
+            display: inline-block;
+        }
+        
+        .truck-badge {
+            background: #0dcaf0;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin: 3px;
+            display: inline-block;
+        }
+        
+        .validation-alert {
+            border-left: 4px solid #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .balanced-alert {
+            border-left: 4px solid #198754;
+            background: #d1e7dd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <a th:href="@{/boards}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Boards
+                    </a>
+                    <h1 class="mb-0"><i class="fas fa-ship"></i> Fb Shipping Flow Dashboard</h1>
+                </div>
+                <p class="text-muted">Track Mother Vessel → Lighters → Trucks → Products flow</p>
+            </div>
+            <div class="col-auto">
+                <a th:href="@{/shipping/shipment/new}" class="btn btn-primary" 
+                   th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}">
+                    <i class="fas fa-plus"></i> New Shipment
+                </a>
+                <a th:href="@{/shipping/shipments}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list"></i> All Shipments
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card pending">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Pending Shipments</h6>
+                        <h2 th:text="${dashboard.summaryStats.pendingShipments}">0</h2>
+                        <small class="text-muted">Awaiting processing</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card in-progress">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">In Progress</h6>
+                        <h2 th:text="${dashboard.summaryStats.inProgressShipments}">0</h2>
+                        <small class="text-muted">Currently loading/unloading</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card completed">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Completed</h6>
+                        <h2 th:text="${dashboard.summaryStats.completedShipments}">0</h2>
+                        <small class="text-muted">Successfully delivered</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card cost">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Cost</h6>
+                        <h2 th:text="${#numbers.formatDecimal(dashboard.summaryStats.totalCost, 0, 'COMMA', 2, 'POINT')}">0</h2>
+                        <small class="text-muted">All stages combined</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-ship fa-3x text-primary mb-3"></i>
+                        <h4 th:text="${dashboard.summaryStats.totalShipments}">0</h4>
+                        <p class="text-muted mb-0">Total Shipments</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-anchor fa-3x text-warning mb-3"></i>
+                        <h4 th:text="${dashboard.summaryStats.totalLighters}">0</h4>
+                        <p class="text-muted mb-0">Total Lighters</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-truck fa-3x text-info mb-3"></i>
+                        <h4 th:text="${dashboard.summaryStats.totalTrucks}">0</h4>
+                        <p class="text-muted mb-0">Total Trucks</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Visualizations -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="mb-3"><i class="fas fa-project-diagram"></i> Shipment Flows</h3>
+            </div>
+            <div class="col-md-6" th:each="flow : ${dashboard.flowVisualizations}">
+                <div class="flow-card">
+                    <h5 th:text="${flow.motherVesselName}">MEGHNA ENERGY</h5>
+                    <p class="mb-2">
+                        <strong>Consignee:</strong> <span th:text="${flow.consignee}">PDL</span>
+                    </p>
+                    <p class="mb-3" th:text="${flow.flowSummary}">
+                        Unloaded from 1 Mother Vessel to 3 Lighters, then to 8 Trucks
+                    </p>
+                    
+                    <!-- Flow Diagram -->
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="text-center">
+                            <i class="fas fa-ship fa-2x"></i>
+                            <p class="mb-0 small">1 Vessel</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-anchor fa-2x"></i>
+                            <p class="mb-0 small" th:text="${flow.lightersCount} + ' Lighters'">3 Lighters</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-truck fa-2x"></i>
+                            <p class="mb-0 small" th:text="${flow.trucksCount} + ' Trucks'">8 Trucks</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Lighter to Truck Breakdown -->
+                    <div th:if="${flow.lighterToTruckMap != null}">
+                        <h6 class="border-top pt-2 mt-2">Lighter → Truck Mapping:</h6>
+                        <div th:each="entry : ${flow.lighterToTruckMap}">
+                            <span class="lighter-badge" th:text="${entry.key}">MV A&J Traders 04</span>
+                            <i class="fas fa-arrow-right mx-2"></i>
+                            <span class="truck-badge" th:text="${entry.value} + ' trucks'">3 trucks</span>
+                        </div>
+                    </div>
+                    
+                    <a th:href="@{/shipping/shipment/{id}(id=${flow.shipmentId})}" 
+                       class="btn btn-light btn-sm mt-3">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Shipments Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> Recent Shipments</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Consignee</th>
+                                        <th>Mother Vessel</th>
+                                        <th>Arrival Date</th>
+                                        <th>Item Type</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                        <th>Assigned To</th>
+                                        <th>Lighters</th>
+                                        <th>Trucks</th>
+                                        <th>Total Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="shipment : ${recentShipments}">
+                                        <td th:text="${shipment.consignee}">PDL</td>
+                                        <td th:text="${shipment.motherVesselName}">MEGHNA ENERGY</td>
+                                        <td th:text="${#temporals.format(shipment.arrivalDate, 'dd/MM/yyyy')}">10/11/2025</td>
+                                        <td th:text="${shipment.itemType}">10-20 Stone</td>
+                                        <td th:text="${#numbers.formatDecimal(shipment.totalIncomingQuantity, 0, 'COMMA', 2, 'POINT')}">5000.0</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${shipment.status == 'PENDING' ? 'bg-warning' : 
+                                                                   shipment.status == 'IN_PROGRESS' ? 'bg-info' : 
+                                                                   shipment.status == 'COMPLETED' ? 'bg-success' : 'bg-secondary'}"
+                                                  th:text="${shipment.status}">IN_PROGRESS</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${shipment.assignedToName != null}" 
+                                                  class="badge bg-primary" 
+                                                  th:text="${shipment.assignedToName}">Officer Name</span>
+                                            <span th:if="${shipment.assignedToName == null}" 
+                                                  class="text-muted small">Not assigned</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning" th:text="${shipment.lighterCount}">3</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info" th:text="${shipment.truckCount}">8</span>
+                                        </td>
+                                        <td th:text="${#numbers.formatDecimal(shipment.totalCost, 0, 'COMMA', 2, 'POINT')}">11,000</td>
+                                        <td>
+                                            <a th:href="@{/shipping/shipment/{id}(id=${shipment.id})}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a th:href="@{/shipping/shipment/{id}/edit(id=${shipment.id})}" 
+                                               class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(recentShipments)}">
+                                        <td colspan="11" class="text-center text-muted">
+                                            No shipments found. <a th:href="@{/shipping/shipment/new}">Create one now</a>.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row (Placeholder for Chart.js) -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Cost Breakdown by Stage</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="costBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Shipment Status Distribution</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        // Chart.js initialization
+        const dashboardData = /*[[${dashboard}]]*/ {};
+        
+        // Cost Breakdown Chart
+        const costCtx = document.getElementById('costBreakdownChart').getContext('2d');
+        new Chart(costCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Lighter Costs', 'Unloading Costs', 'Transport Costs'],
+                datasets: [{
+                    data: [5000, 1000, 5000], // Example data - replace with actual
+                    backgroundColor: ['#ffc107', '#0dcaf0', '#198754']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+        
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Completed'],
+                datasets: [{
+                    data: [
+                        /*[[${dashboard.summaryStats.pendingShipments}]]*/ 0,
+                        /*[[${dashboard.summaryStats.inProgressShipments}]]*/ 0,
+                        /*[[${dashboard.summaryStats.completedShipments}]]*/ 0
+                    ],
+                    backgroundColor: ['#ffc107', '#0dcaf0', '#198754']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

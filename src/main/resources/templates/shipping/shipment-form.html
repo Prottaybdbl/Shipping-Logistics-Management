@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Shipment - Fb Shipping</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .lighter-card {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .truck-card {
+            background: #cfe2ff;
+            border-left: 4px solid #0dcaf0;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .product-card {
+            background: #d1e7dd;
+            border-left: 4px solid #198754;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+        }
+        .remove-btn {
+            cursor: pointer;
+            color: #dc3545;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-ship"></i> Create New Shipment</h2>
+                <p class="text-muted">Define Mother Vessel → Lighters → Trucks → Products flow</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Display Success/Error Messages -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <form th:action="@{/shipping/shipment/create}" th:object="${shipmentDTO}" method="post">
+            <!-- Global validation errors (must be inside form so th:object is in scope) -->
+            <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                <h5><i class="fas fa-exclamation-triangle"></i> Validation Errors:</h5>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                </ul>
+            </div>
+            <!-- CSRF Token -->
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <!-- Hidden Institute ID (required by backend validation) -->
+            <input type="hidden" th:field="*{instituteId}" />
+            <!-- Mother Vessel Details -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-ship"></i> Mother Vessel Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Consignee *</label>
+                            <input type="text" class="form-control" th:field="*{consignee}" 
+                                   placeholder="e.g., PDL" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mother Vessel Name *</label>
+                            <input type="text" class="form-control" th:field="*{motherVesselName}" 
+                                   placeholder="e.g., MEGHNA ENERGY" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Arrival Date *</label>
+                            <input type="date" class="form-control" th:field="*{arrivalDate}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Total Incoming Quantity *</label>
+                            <input type="number" step="0.01" class="form-control" 
+                                   th:field="*{totalIncomingQuantity}" placeholder="e.g., 5000" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Item Type *</label>
+                            <input type="text" class="form-control" th:field="*{itemType}" 
+                                   placeholder="e.g., 10-20 Stone" required>
+                        </div>
+                    </div>
+                    <div class="row" th:if="${currentUser.role.name() == 'MANAGER' || currentUser.role.name() == 'CEO'}">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Assign Officer (Optional)</label>
+                            <select class="form-select" th:field="*{assignedToUserId}">
+                                <option value="">-- No Assignment --</option>
+                                <option th:each="officer : ${officers}" 
+                                        th:value="${officer.id}" 
+                                        th:text="${officer.fullName} + ' (' + ${officer.email} + ')'">Officer Name</option>
+                            </select>
+                            <small class="text-muted">Assign an officer to manage this shipment</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lighters Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="fas fa-anchor"></i> Lighters (Unload from Mother Vessel)
+                        <button type="button" class="btn btn-sm btn-light float-end" onclick="addLighter()">
+                            <i class="fas fa-plus"></i> Add Lighter
+                        </button>
+                    </h5>
+                </div>
+                <div class="card-body" id="lightersContainer">
+                    <p class="text-muted" id="noLightersMessage">No lighters added yet. Click "Add Lighter" to start.</p>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Create Shipment
+                    </button>
+                    <a th:href="@{/shipping/dashboard}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let lighterCount = 0;
+        let truckCount = {};
+        let productCount = {};
+
+        function addLighter() {
+            const container = document.getElementById('lightersContainer');
+            const noMsg = document.getElementById('noLightersMessage');
+            if (noMsg) noMsg.style.display = 'none';
+
+            const lighterIndex = lighterCount++;
+            truckCount[lighterIndex] = 0;
+
+            const lighterHtml = `
+                <div class="lighter-card" id="lighter-${lighterIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-anchor"></i> Lighter #${lighterIndex + 1}</h6>
+                        <span class="remove-btn" onclick="removeLighter(${lighterIndex})">
+                            <i class="fas fa-trash"></i> Remove
+                        </span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Lighter Name *</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].lighterName" 
+                                   placeholder="e.g., MV A&J Traders 04" required>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Destination</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].destination" 
+                                   placeholder="e.g., O/A - Tulatoli">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Loading Date *</label>
+                            <input type="date" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].loadingDate" required>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Loaded Qty *</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].loadedQuantity" 
+                                   placeholder="1500" required>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Unloading Point</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].unloadingPoint" 
+                                   placeholder="e.g., Tulatoli">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Lighter Cost</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].lighterCost" 
+                                   placeholder="1500">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-info" onclick="addTruck(${lighterIndex})">
+                            <i class="fas fa-truck"></i> Add Truck for this Lighter
+                        </button>
+                    </div>
+                    <div id="trucks-${lighterIndex}" class="mt-2"></div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', lighterHtml);
+        }
+
+        function removeLighter(index) {
+            const element = document.getElementById('lighter-' + index);
+            if (element) element.remove();
+        }
+
+        function addTruck(lighterIndex) {
+            const container = document.getElementById('trucks-' + lighterIndex);
+            const truckIndex = truckCount[lighterIndex]++;
+            const fullIndex = `${lighterIndex}-${truckIndex}`;
+            productCount[fullIndex] = 0;
+
+            const truckHtml = `
+                <div class="truck-card" id="truck-${fullIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-truck"></i> Truck #${truckIndex + 1}</h6>
+                        <span class="remove-btn" onclick="removeTruck('${fullIndex}')">
+                            <i class="fas fa-trash"></i> Remove
+                        </span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Conveyance Name *</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].conveyanceName" 
+                                   placeholder="e.g., MV Innex 05" required>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Unloading Date *</label>
+                            <input type="date" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].unloadingDate" required>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Destination</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].destination" 
+                                   placeholder="Motirhat">
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Unloaded Qty *</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].unloadedQuantity" 
+                                   placeholder="480" required>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Unloading Cost</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].unloadingCost" 
+                                   placeholder="100">
+                        </div>
+                        <div class="col-md-1 mb-2">
+                            <label class="form-label">Trucks</label>
+                            <input type="number" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].numberOfTrucks" 
+                                   placeholder="1" value="1">
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-sm btn-success" onclick="addProduct('${fullIndex}', ${lighterIndex}, ${truckIndex})">
+                        <i class="fas fa-box"></i> Add Product
+                    </button>
+                    <div id="products-${fullIndex}" class="mt-2"></div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', truckHtml);
+        }
+
+        function removeTruck(index) {
+            const element = document.getElementById('truck-' + index);
+            if (element) element.remove();
+        }
+
+        function addProduct(fullIndex, lighterIndex, truckIndex) {
+            const container = document.getElementById('products-' + fullIndex);
+            const productIndex = productCount[fullIndex]++;
+
+            const productHtml = `
+                <div class="product-card" id="product-${fullIndex}-${productIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small><i class="fas fa-box"></i> Product #${productIndex + 1}</small>
+                        <span class="remove-btn" onclick="removeProduct('${fullIndex}-${productIndex}')">
+                            <i class="fas fa-trash"></i>
+                        </span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-1">
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].productDetails[${productIndex}].item" 
+                                   placeholder="Item (e.g., 10-20 Stone)" required>
+                        </div>
+                        <div class="col-md-2 mb-1">
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].productDetails[${productIndex}].deliveryQuantity" 
+                                   placeholder="Delivery Qty">
+                        </div>
+                        <div class="col-md-2 mb-1">
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].productDetails[${productIndex}].lighterCost" 
+                                   placeholder="Lighter Cost">
+                        </div>
+                        <div class="col-md-2 mb-1">
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].productDetails[${productIndex}].unloadingCost" 
+                                   placeholder="Unload Cost">
+                        </div>
+                        <div class="col-md-3 mb-1">
+                            <input type="number" step="0.01" class="form-control form-control-sm" 
+                                   name="lighterLoadings[${lighterIndex}].truckUnloadings[${truckIndex}].productDetails[${productIndex}].truckTransportCost" 
+                                   placeholder="Transport Cost">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', productHtml);
+        }
+
+        function removeProduct(index) {
+            const element = document.getElementById('product-' + index);
+            if (element) element.remove();
+        }
+    </script>
+</body>
+</html>
