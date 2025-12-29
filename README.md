@@ -320,13 +320,13 @@ This project is licensed under the MIT License.
 ## 👥 Authors
 
 - Initial development based on MyDay (MERN) project architecture
-- Spring Boot implementation: [Your Name]
+- Spring Boot implementation: [Prottay]
 
 ## 📞 Support
 
 For issues or questions:
 - Create an issue on GitHub
-- Email: support@taskmanagement.com
+- Email: prottay.nsu@gmail.com
 - Documentation: `IMPLEMENTATION_GUIDE.md`
 
 ---
