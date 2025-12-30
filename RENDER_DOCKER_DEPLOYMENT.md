@@ -6,19 +6,24 @@ Docker select করেছেন - এটা সবচেয়ে সহজ এ
 
 ## 🚀 Quick Start - Docker Deployment
 
-### Step 1: PostgreSQL Database তৈরি করুন
+### Step 1: Database Setup (Supabase)
 
-1. [Render.com Dashboard](https://dashboard.render.com/) এ যান
-2. **New +** → **PostgreSQL** click করুন
-3. Details fill করুন:
-   ```
-   Name: task-management-db
-   Database: task_management_db
-   Region: Singapore
-   Instance Type: Free
-   ```
-4. **Create Database** button এ click করুন
-5. Database তৈরি হলে **Internal Database URL** copy করুন
+Render এর Free PostgreSQL 90 দিন পর delete হয়ে যায়। তাই **Supabase** ব্যবহার করা best (Free & Permanent)।
+
+1. [Supabase](https://supabase.com/) এ account খুলুন এবং login করুন।
+2. **New Project** create করুন:
+   - Name: `task-management-db`
+   - Password: **Strong Password দিন এবং মনে রাখুন!** (পরে লাগবে)
+   - Region: `Singapore` (বা আপনার কাছাকাছি)
+   - Pricing Plan: Free
+3. Project create হতে 1-2 মিনিট সময় লাগবে।
+4. Project ready হলে **Project Settings** (gear icon) -> **Database** এ যান।
+5. **Connection parameters** section থেকে নিচের তথ্যগুলো save করে রাখুন:
+   - Host
+   - Database Name (usually `postgres`)
+   - Port (usually `5432`)
+   - User (usually `postgres`)
+   - Password (যেটা step 2 তে দিয়েছেন)
 
 ---
 
@@ -48,15 +53,16 @@ Docker select করেছেন - এটা সবচেয়ে সহজ এ
 
 **Environment** section এ scroll করে এই variables add করুন:
 
-#### Required Variables:
+#### Required Variables (From Supabase):
 
 ```bash
-# Database Configuration (আপনার Render PostgreSQL থেকে নিন)
-SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-xxxxx.singapore-postgres.render.com:5432/task_management_db
+# Database Configuration (Supabase Connection Details)
+# Format: jdbc:postgresql://<HOST>:<PORT>/<DATABASE_NAME>
+SPRING_DATASOURCE_URL=jdbc:postgresql://db.xxxxxxxx.supabase.co:5432/postgres
 
-SPRING_DATASOURCE_USERNAME=task_management_db_user
+SPRING_DATASOURCE_USERNAME=postgres
 
-SPRING_DATASOURCE_PASSWORD=xxxxxxxxxxxxxxxxxxxx
+SPRING_DATASOURCE_PASSWORD=YourStrongPassword
 
 # PostgreSQL Dialect
 SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
@@ -68,27 +74,19 @@ SERVER_PORT=8080
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
 ```
 
-#### কিভাবে Database URL পাবেন:
+> [!NOTE]
+> **Supabase Transaction Mode (Optional but Recommended for Serverless):**
+> যদি Supabase এর Transaction Pooler (Port 6543) use করেন, তাহলে URL এ `?sslmode=require` add করতে হতে পারে। তবে direct connection (Port 5432) সাধারণ usage এর জন্য ঠিক আছে।
 
-1. আপনার PostgreSQL database এ click করুন
-2. **Internal Database URL** দেখুন - এরকম হবে:
-   ```
-   postgresql://user:password@host:5432/database
-   ```
-3. এটাকে JDBC format এ convert করুন:
-   ```
-   jdbc:postgresql://host:5432/database
-   ```
-
-**Example:**
+**Example Config:**
 ```bash
-# Render থেকে পেলেন:
-postgresql://task_db_user:Xy9zabc123@dpg-abc123.singapore-postgres.render.com:5432/task_management_db
+# Supabase Host: db.abcdefgh.supabase.co
+# User: postgres
+# Pass: MySecretPass123
 
-# Environment Variable এ দিবেন:
-SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-abc123.singapore-postgres.render.com:5432/task_management_db
-SPRING_DATASOURCE_USERNAME=task_db_user
-SPRING_DATASOURCE_PASSWORD=Xy9zabc123
+SPRING_DATASOURCE_URL=jdbc:postgresql://db.abcdefgh.supabase.co:5432/postgres
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=MySecretPass123
 ```
 
 ---
@@ -251,7 +249,7 @@ http://localhost:8080
 
 Deploy করার আগে verify করুন:
 
-- [x] PostgreSQL database created on Render
+- [x] PostgreSQL database created on Supabase
 - [x] GitHub repository accessible  
 - [x] **Runtime: Docker** selected
 - [x] Environment variables properly set:
@@ -276,7 +274,7 @@ Deploy করার আগে verify করুন:
 
 ## 💰 Cost
 
-- **Database (PostgreSQL)**: FREE tier (512MB RAM, 90 days retention)
+- **Database (Supabase)**: FREE tier (500MB storage)
 - **Web Service (Docker)**: FREE tier (512MB RAM, 750 hours/month)
 - **Total**: **$0/month** (Free tier এ)
 
